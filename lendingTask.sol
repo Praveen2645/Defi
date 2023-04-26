@@ -2,26 +2,29 @@
 pragma solidity ^0.8.19;
 contract Lending{
     address public owner;
-    address public borrower;
+    address public Borrower;
     uint public totLiquidity;
     uint public interestRate;
     uint interestPaid;
-    uint amountt;
+    uint Amount;
 
-    struct Deposit { // struct of the borro
-        address depositor;
-        uint256 amount;
-        uint256 interest;
-        uint256 dueDate;
-        bool active;
+//struct
+    struct Deposit { 
+        address borrower;// the one who applying for loan
+        uint256 amount;// amount of loan
+        uint256 interest; //interest rate
+        uint256 dueDate;// date of loan to be paid
+        bool active; // to check loan is still active
     }
 
     mapping (address => Deposit[]) public _borrowersDetails;// mapping for Deposit[] struct with address to track the borrowers details
     mapping (address => uint256) public _balances; // mapping of address to uint to track the balances of a particular account
 
-constructor(){
-    owner=msg.sender; // deployer will be tyhe owner
+constructor(address _borrower,uint _amount){
+    owner=msg.sender; // deployer will be the owner
     interestRate=10; // 10% annual interest rate
+    Borrower=_borrower;
+    Amount=_amount;
 }
 
 //function for depositing the lending amount to the pool
@@ -53,17 +56,22 @@ require(amount > 0,"amount should be greater than zero");//amount should not be 
 function repay(uint id,uint amount) public payable  {
   require(_borrowersDetails[msg.sender][id].active, "Deposit not found or already repaid"); // checking due is paid or unpaid
   require(block.timestamp <= _borrowersDetails[msg.sender][id].dueDate, "Deposit overdue");// checking overdue time
-  require(msg.sender==borrower,"you are not the borrower");
+  require(msg.sender==Borrower,"you are not the borrower");
   require(msg.value==amount,"please enter the exact amount");
 }
 
 // borrower will repay the lended amount with interest
- function repayOnlyInterest(uint id) public payable{
 
+    function repayInterest() public payable {
+        require(msg.sender == Borrower, "Only borrower can repay interest");
+        uint interestOwend = Amount * interestRate / 100 - interestPaid;
+        require(msg.value <= interestOwend, "Amount paid exceeds interest owed");
+        interestPaid += msg.value;
+    
  }
- 
+ //function is to calculate the interest amount owed at any point in time.
     function interestOwed() public view returns (uint) {
-        return amountt * interestRate / 100 - interestPaid;
+        return Amount* interestRate / 100- interestPaid ; // formula
     }
  
 }
